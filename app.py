@@ -817,31 +817,35 @@ with tab_alerts:
     """
                         )
 
-                    if gemini_key and GENAI_AVAILABLE:
-                        if st.button(f"✨ Generate Crisis Action Plan (Gemini)", key=f"gemini_{row['phc_id']}_{row['medicine']}"):
-                            with st.spinner("Gemini is analyzing the supply chain data..."):
+                    if st.button('✨ Generate Crisis Action Plan (Gemini)', key=f'gemini_{row["phc_id"]}_{row["medicine"]}'):
+                        if not gemini_key:
+                            st.warning('⚠️ Please enter your Gemini API key in the left sidebar to generate the plan.')
+                        else:
+                            with st.spinner('Gemini 1.5 Flash is analyzing the supply chain data...'):
                                 try:
+                                    import google.generativeai as genai
+                                    genai.configure(api_key=gemini_key)
                                     system_instruction = (
-                                        "You are an elite Healthcare Logistics AI. Your task is to output a 3-point crisis action plan. "
-                                        "Edge case protocols: "
-                                        "1. If distance > 20km, explicitly mandate cold-chain or secure transit verification. "
-                                        "2. If risk is 'High', mandate immediate notification of the district medical officer. "
-                                        "3. If surplus is tight, advise rationing remaining stock strictly for vulnerable patients."
+                                        'You are an elite Healthcare Logistics AI. Your task is to output a 3-point crisis action plan. '
+                                        'Edge case protocols: '
+                                        '1. If distance > 20km, explicitly mandate cold-chain or secure transit verification. '
+                                        '2. If risk is High, mandate immediate notification of the district medical officer. '
+                                        '3. If surplus is tight, advise rationing remaining stock strictly for vulnerable patients.'
                                     )
                                     model = genai.GenerativeModel(
                                         'gemini-1.5-flash',
                                         system_instruction=system_instruction
                                     )
                                     prompt = (
-                                        f"Context: Clinic {row['phc_id']} is at {row['risk_level']} risk of a {row['medicine']} stockout. "
-                                        f"Current stock: {row['current_stock']} | Predicted 7-day demand: {row['predicted_demand_7d']}. "
-                                        f"Action: Transferring {transfer_quantity} units from {best['phc_id']} ({best['distance_km']:.1f} km away). "
-                                        f"Draft the briefing."
+                                        f'Context: Clinic {row["phc_id"]} is at {row["risk_level"]} risk of a {row["medicine"]} stockout. '
+                                        f'Current stock: {row["current_stock"]} | Predicted 7-day demand: {row["predicted_demand_7d"]}. '
+                                        f'Action: Transferring {transfer_quantity} units from {best["phc_id"]} ({best["distance_km"]:.1f} km away). '
+                                        f'Draft the briefing.'
                                     )
                                     response = model.generate_content(prompt)
                                     st.info(response.text)
                                 except Exception as e:
-                                    st.error(f"Gemini API Error: {e}")
+                                    st.error(f'Gemini API Error: {e}')
 
     
                 else:
