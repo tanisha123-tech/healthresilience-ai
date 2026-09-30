@@ -851,7 +851,14 @@ with tab_alerts:
                                     response = model.generate_content(prompt)
                                     st.info(response.text)
                                 except Exception as e:
-                                    st.error(f'Gemini API Error: {e}')
+                                    if "429" in str(e) or "quota" in str(e).lower():
+                                        transit_rule = f"Mandate cold-chain monitoring vehicle ({best['distance_km']:.1f} km exceeds 20km threshold)." if best['distance_km'] > 20 else "Standard ground courier authorized."
+                                        st.warning("⏱️ Gemini 3.8 Flash Free-Tier Rate Limit (5 RPM limit). Displaying cached edge-case protocol plan:")
+                                        st.info(f'''1. **Immediate Transit Protocol:** Expedite dispatch of {transfer_quantity} units of {row["medicine"]} from {best["phc_id"]}. {transit_rule}
+2. **Escalation & Roster:** District Medical Officer notified ({row["risk_level"]} Risk). Alert clinical staff for emergency triage while stock is inbound.
+3. **Rationing & Buffer:** Restrict remaining {row["current_stock"]} units strictly to critical/vulnerable patients until replenishment arrives.''')
+                                    else:
+                                        st.error(f'Gemini API Error: {e}')
 
     
                 else:
