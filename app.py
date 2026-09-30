@@ -96,7 +96,7 @@ def train_models(df):
     )
 
     demand_model = XGBRegressor(
-        n_estimators=250,
+        n_estimators=100,
         max_depth=6,
         learning_rate=0.05,
         subsample=0.85,
@@ -104,7 +104,7 @@ def train_models(df):
         objective="reg:squarederror",
         eval_metric="mae",
         random_state=42,
-        n_jobs=-1
+        n_jobs=1
     )
 
     demand_model.fit(X_train, y_train)
@@ -129,7 +129,7 @@ def train_models(df):
     )
 
     stockout_model = XGBClassifier(
-        n_estimators=250,
+        n_estimators=100,
         max_depth=5,
         learning_rate=0.05,
         subsample=0.85,
@@ -137,7 +137,7 @@ def train_models(df):
         objective="binary:logistic",
         eval_metric="logloss",
         random_state=42,
-        n_jobs=-1
+        n_jobs=1
     )
 
     stockout_model.fit(X_train, y_train)
@@ -923,41 +923,20 @@ with tab_fed:
         "🇿🇦 South Africa Node"
     ]
     
+    @st.cache_data
+    def get_federated_maes():
+        maes = []
+        for i in range(5):
+            local_data = df.sample(frac=0.33, random_state=i)
+            local_model = XGBRegressor(n_estimators=30, max_depth=4, learning_rate=0.05, random_state=i, n_jobs=1)
+            local_model.fit(local_data[FEATURES], local_data["forecast_7d"])
+            preds = local_model.predict(local_data[FEATURES])
+            maes.append(mean_absolute_error(local_data["forecast_7d"], preds))
+        return maes
+
+    fed_maes = get_federated_maes()
     for i, node in enumerate(nodes):
-    
-        local_data = df.sample(
-            frac=0.33,
-            random_state=i
-        )
-    
-        local_model = XGBRegressor(
-            n_estimators=100,
-            max_depth=5,
-            learning_rate=0.05,
-            random_state=i,
-            n_jobs=-1
-        )
-    
-        local_model.fit(
-            local_data[FEATURES],
-            local_data["forecast_7d"]
-        )
-    
-        local_predictions = (
-            local_model.predict(
-                local_data[FEATURES]
-            )
-        )
-    
-        local_mae = mean_absolute_error(
-            local_data["forecast_7d"],
-            local_predictions
-        )
-    
-        fed_cols[i].metric(
-            node,
-            f"Local MAE: {local_mae:.1f}"
-        )
+        fed_cols[i].metric(node, f"Local MAE: {fed_maes[i]:.1f}")
     
     
     st.success(
