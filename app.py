@@ -188,7 +188,13 @@ st.info(
 
 st.sidebar.header("⚙️ Control Center")
 
-gemini_key = st.sidebar.text_input("🔑 Gemini API Key (Optional)", type="password", help="Enter your Google AI Studio key to enable LLM features")
+default_gemini_key = ""
+try:
+    default_gemini_key = st.secrets.get("gemini_api_key", "")
+except Exception:
+    pass
+
+gemini_key = st.sidebar.text_input("🔑 Gemini API Key", value=default_gemini_key, type="password", help="Powered by Gemini 3.8 Flash")
 if gemini_key and GENAI_AVAILABLE:
     genai.configure(api_key=gemini_key)
 
@@ -821,7 +827,7 @@ with tab_alerts:
                         if not gemini_key:
                             st.warning('⚠️ Please enter your Gemini API key in the left sidebar to generate the plan.')
                         else:
-                            with st.spinner('Gemini 1.5 Flash is analyzing the supply chain data...'):
+                            with st.spinner('Gemini 3.8 Flash is analyzing the supply chain data...'):
                                 try:
                                     import google.generativeai as genai
                                     genai.configure(api_key=gemini_key)
@@ -833,7 +839,7 @@ with tab_alerts:
                                         '3. If surplus is tight, advise rationing remaining stock strictly for vulnerable patients.'
                                     )
                                     model = genai.GenerativeModel(
-                                        'gemini-1.5-flash',
+                                        'gemini-3.8-flash',
                                         system_instruction=system_instruction
                                     )
                                     prompt = (
